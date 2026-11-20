@@ -52,6 +52,14 @@ python3 tools/make-template.py
 
 qui écrit `src/assets/lotpack-template.pdf` (nécessite PyMuPDF). À relancer seulement si le PDF officiel change ; le résultat est commité.
 
+## Icônes
+
+```bash
+python3 tools/make-icons.py
+```
+
+Dessine les icônes de l'app (fond rouge, « SD » blanc, trois traits) dans `src/pwa/icons/` (nécessite Pillow et la police DejaVu Sans Bold). Le résultat est commité ; relancer `node build/build.js` ensuite.
+
 ## Avancement
 
 | Étape | Contenu | État |
