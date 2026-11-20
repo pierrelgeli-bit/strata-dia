@@ -693,8 +693,8 @@
     paginate(pages, plan, fonts);
     const title = `Lotpack – ${[job.jobNumber, job.projectTitle].filter(Boolean).join(' ') || 'Job'} – ${SL.schema.formatDate(shift.date)}`;
     doc.setTitle(title);
-    doc.setCreator('Strata Lotpack');
-    doc.setProducer('Strata Lotpack');
+    doc.setCreator('STRATA Dia');
+    doc.setProducer('STRATA Dia');
     return doc.save();
   }
 

@@ -16,14 +16,14 @@ fs.mkdirSync(outDir, { recursive: true });
 let failures = 0;
 const check = (cond, msg) => { console.log(`${cond ? 'PASS' : 'FAIL'}  ${msg}`); if (!cond) failures++; };
 
-// copy of dist/ under /strata-lotpack/ (same path as GitHub Pages), so a "new version" can be published
+// copy of dist/ under /strata-dia/ (same path as GitHub Pages), so a "new version" can be published
 const site = fs.mkdtempSync(path.join(os.tmpdir(), 'lotpack-site-'));
 fs.cpSync(dist, site, { recursive: true });
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.json': 'application/json' };
 const server = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
-  if (!u.pathname.startsWith('/strata-lotpack/')) { res.writeHead(404); return res.end(); }
-  let p = path.join(site, decodeURIComponent(u.pathname.slice('/strata-lotpack/'.length)) || 'index.html');
+  if (!u.pathname.startsWith('/strata-dia/')) { res.writeHead(404); return res.end(); }
+  let p = path.join(site, decodeURIComponent(u.pathname.slice('/strata-dia/'.length)) || 'index.html');
   if (p.endsWith(path.sep)) p = path.join(p, 'index.html');
   if (!p.startsWith(site) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) { res.writeHead(404); return res.end(); }
   res.writeHead(200, { 'Content-Type': TYPES[path.extname(p)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
@@ -32,7 +32,7 @@ const server = http.createServer((req, res) => {
 
 (async () => {
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
-  const base = `http://127.0.0.1:${server.address().port}/strata-lotpack/`;
+  const base = `http://127.0.0.1:${server.address().port}/strata-dia/`;
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'lotpack-'));
   const ctx = await chromium.launchPersistentContext(profile, { viewport: { width: 1280, height: 900 } });
   const page = ctx.pages()[0] || await ctx.newPage();
@@ -43,13 +43,17 @@ const server = http.createServer((req, res) => {
 
   // ---- Manifest and icons ----
   const mf = await (await page.request.get(base + 'manifest.webmanifest')).json();
-  check(mf.name === 'Strata Lotpack' && mf.start_url === './' && ['fullscreen', 'standalone'].includes(mf.display), `Manifest: ${mf.name}, start_url ${mf.start_url}, display ${mf.display}`);
+  check(mf.name === 'STRATA Dia' && mf.start_url === './' && ['fullscreen', 'standalone'].includes(mf.display), `Manifest: ${mf.name}, start_url ${mf.start_url}, display ${mf.display}`);
   const sizes = [];
   for (const ic of mf.icons) {
     const r = await page.request.get(base + ic.src);
     if (r.ok() && r.headers()['content-type'] === 'image/png') sizes.push(ic.sizes + (ic.purpose ? ` ${ic.purpose}` : ''));
   }
   check(sizes.length === mf.icons.length && sizes.some((s) => s.startsWith('192x192')) && sizes.some((s) => s.startsWith('512x512')), `Icons served: ${sizes.join(', ')}`);
+
+  // ---- A cache left by the app under its old name (Strata Lotpack) ----
+  await page.goto(base + 'manifest.webmanifest');
+  await page.evaluate(async () => { await (await caches.open('strata-lotpack-0123456789ab')).put('./old', new Response('old')); });
 
   // ---- First visit: service worker installed ----
   await page.goto(base);
@@ -62,8 +66,9 @@ const server = http.createServer((req, res) => {
   await page.waitForSelector('html[data-ready="1"]');
   const controlled = await page.evaluate(() => !!navigator.serviceWorker.controller);
   check(controlled, 'Service worker controls the page');
-  const cached = await page.evaluate(async () => (await caches.keys()).filter((k) => k.startsWith('strata-lotpack-')));
+  const cached = await page.evaluate(async () => (await caches.keys()).filter((k) => k.startsWith('strata-dia-')));
   check(cached.length === 1, `One app cache: ${cached.join(', ')}`);
+  check(!(await page.evaluate(async () => (await caches.keys()).some((k) => k.startsWith('strata-lotpack-')))), 'Cache from the old app name removed');
 
   // ---- Offline ----
   await page.getByRole('button', { name: 'New job' }).click();
@@ -102,12 +107,12 @@ const server = http.createServer((req, res) => {
   await page.waitForSelector('html[data-ready="1"]');
   check(await page.locator('meta[name=test-version]').count() === 1, 'Reload: the new version is running');
   check(await page.evaluate(async () => (await SL.db.getAllJobs())[0].shifts[0].product === 'AC14'), 'Data kept across the update');
-  const after = await page.evaluate(async () => (await caches.keys()).filter((k) => k.startsWith('strata-lotpack-')));
+  const after = await page.evaluate(async () => (await caches.keys()).filter((k) => k.startsWith('strata-dia-')));
   check(after.length === 1 && after[0].endsWith('-next'), `Old cache removed: ${after.join(', ')}`);
 
   // ---- Opened as a local file: no service worker ----
   const p2 = await ctx.newPage();
-  await p2.goto('file://' + path.join(dist, 'strata-lotpack.html'));
+  await p2.goto('file://' + path.join(dist, 'strata-dia.html'));
   await p2.waitForSelector('html[data-ready="1"]');
   check(await p2.evaluate(() => SL.pwa.served === false && !navigator.serviceWorker?.controller), 'Local file: no service worker');
 

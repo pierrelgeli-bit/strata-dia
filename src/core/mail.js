@@ -56,7 +56,7 @@
     const { shifts, ...jobFields } = job;
     const data = {
       schemaVersion: SCHEMA_VERSION,
-      app: 'strata-lotpack',
+      app: SL.schema.APP_ID,
       exportedAt: isoLocal(),
       jobs: [{ ...jobFields, shifts: [shift] }],
     };

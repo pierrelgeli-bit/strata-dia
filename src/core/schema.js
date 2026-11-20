@@ -3,6 +3,9 @@
   'use strict';
 
   const SCHEMA_VERSION = 2;
+  // Value of `app` in exported JSON; files written before the rename to STRATA Dia say 'strata-lotpack'
+  const APP_ID = 'strata-dia';
+  const APP_IDS = [APP_ID, 'strata-lotpack'];
 
   // Drawing / legend colours (a legend's Key is its colour)
   const PALETTE = ['#d11f1f', '#1f4fd1', '#16893a', '#e07b00', '#7b2fbf', '#8a5a2b', '#0f8a8a', '#111111'];
@@ -124,7 +127,7 @@
   }
 
   SL.schema = {
-    SCHEMA_VERSION, PALETTE, LAYER_KEYS, uuid, nowIso, todayIso, formatDate,
+    SCHEMA_VERSION, APP_ID, APP_IDS, PALETTE, LAYER_KEYS, uuid, nowIso, todayIso, formatDate,
     defaultSettings, newJob, newShift, migrateJob, shiftOrder,
   };
 })(window.SL = window.SL || {});

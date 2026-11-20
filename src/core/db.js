@@ -2,21 +2,72 @@
 (function (SL) {
   'use strict';
 
-  const DB_NAME = 'strata-lotpack';
+  const DB_NAME = 'strata-dia';
+  const LEGACY_DB_NAME = 'strata-lotpack'; // name used before the app was renamed STRATA Dia
   const DB_VERSION = 1;
+  const STORES = ['jobs', 'meta'];
   let dbPromise = null;
+
+  // Opens the database written by the app before it was renamed, without creating it when absent
+  function openLegacy() {
+    return new Promise((resolve) => {
+      let req;
+      try { req = indexedDB.open(LEGACY_DB_NAME); } catch (e) { resolve(null); return; }
+      req.onupgradeneeded = () => req.transaction.abort(); // did not exist: leave nothing behind
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+      req.onblocked = () => resolve(null);
+    });
+  }
+
+  // First start under the new name: copy jobs, settings and contacts from the old database.
+  // The old database is left untouched (nothing is deleted).
+  async function copyLegacy(db) {
+    const old = await openLegacy();
+    if (!old) return 0;
+    let copied = 0;
+    try {
+      for (const name of STORES) {
+        if (!old.objectStoreNames.contains(name)) continue;
+        const rows = await new Promise((resolve, reject) => {
+          const r = old.transaction(name, 'readonly').objectStore(name).getAll();
+          r.onsuccess = () => resolve(r.result || []);
+          r.onerror = () => reject(r.error);
+        });
+        if (!rows.length) continue;
+        await new Promise((resolve, reject) => {
+          const t = db.transaction(name, 'readwrite');
+          rows.forEach((row) => t.objectStore(name).put(row));
+          t.oncomplete = resolve;
+          t.onerror = () => reject(t.error);
+        });
+        if (name === 'jobs') copied = rows.length;
+      }
+    } finally {
+      old.close();
+    }
+    return copied;
+  }
 
   function open() {
     if (dbPromise) return dbPromise;
     dbPromise = new Promise((resolve, reject) => {
       if (!window.indexedDB) { reject(new Error('IndexedDB is not available in this browser.')); return; }
+      let created = false;
       const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = () => {
+      req.onupgradeneeded = (e) => {
         const db = req.result;
-        if (!db.objectStoreNames.contains('jobs')) db.createObjectStore('jobs', { keyPath: 'id' });
-        if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' });
+        created = e.oldVersion === 0;
+        STORES.forEach((name) => { if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: name === 'jobs' ? 'id' : 'key' }); });
       };
-      req.onsuccess = () => resolve(req.result);
+      req.onsuccess = () => {
+        const db = req.result;
+        if (!created) { resolve(db); return; }
+        copyLegacy(db)
+          .then((n) => { if (n) console.info(`Copied ${n} job(s) from the previous app name.`); })
+          .catch((e) => console.warn('Previous data not copied:', e && e.message))
+          .then(() => resolve(db));
+      };
       req.onerror = () => reject(req.error);
       req.onblocked = () => reject(new Error('Database blocked by another open tab.'));
     });

@@ -7,7 +7,7 @@ const fs = require('fs');
 const os = require('os');
 const { chromium } = require('playwright');
 
-const url = 'file://' + path.resolve(__dirname, '..', 'dist', 'strata-lotpack.html');
+const url = 'file://' + path.resolve(__dirname, '..', 'dist', 'strata-dia.html');
 const outDir = process.env.OUT_DIR || path.join(__dirname, 'out');
 fs.mkdirSync(outDir, { recursive: true });
 let failures = 0;
@@ -110,8 +110,8 @@ async function open(ctx) {
   await downloads.find((d) => d.suggestedFilename().endsWith('.json')).saveAs(jsonPath);
   await downloads.find((d) => d.suggestedFilename().endsWith('.pdf')).saveAs(path.join(outDir, 'step7.pdf'));
   const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-  check(data.schemaVersion === 2 && data.app === 'strata-lotpack' && /T\d\d:\d\d:\d\d[+-]\d\d:\d\d$/.test(data.exportedAt)
-    && data.jobs.length === 1 && data.jobs[0].jobNumber === 'J-24017' && data.jobs[0].shifts.length === 1 && data.jobs[0].shifts[0].product === 'AC14', 'JSON: schema 2, one job, this shift');
+  check(data.schemaVersion === 2 && data.app === 'strata-dia' && /T\d\d:\d\d:\d\d[+-]\d\d:\d\d$/.test(data.exportedAt)
+    && data.jobs.length === 1 && data.jobs[0].jobNumber === 'J-24017' && data.jobs[0].shifts.length === 1 && data.jobs[0].shifts[0].product === 'AC14', 'JSON: schema 2, app strata-dia, one job, this shift');
   check((await page.locator('table.hist tbody tr').count()) === 1 && (await page.locator('table.hist').innerText()).includes('pm@client.com.au'), 'Send history entry (to, CC, time)');
   check((await page.locator('.ticket').first().innerText()).includes('Sam Taylor') || (await page.locator('.ticket').first().innerText()).includes('pm@client'), 'Recent recipients listed first');
   await page.screenshot({ path: path.join(outDir, 'step7-send-tablet.png'), fullPage: true });

@@ -6,7 +6,7 @@ const fs = require('fs');
 const os = require('os');
 const { chromium } = require('playwright');
 
-const url = 'file://' + path.resolve(__dirname, '..', 'dist', 'strata-lotpack.html');
+const url = 'file://' + path.resolve(__dirname, '..', 'dist', 'strata-dia.html');
 const shots = process.env.SHOTS_DIR || null;
 let failures = 0;
 const check = (cond, msg) => { console.log(`${cond ? 'PASS' : 'FAIL'}  ${msg}`); if (!cond) failures++; };

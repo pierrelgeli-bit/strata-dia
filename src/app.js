@@ -268,7 +268,7 @@
           await SL.db.flush();
           const fresh = await SL.db.getJob(job.id);
           const safe = (x) => String(x || '').replace(/[^A-Za-z0-9-]+/g, '_').replace(/^_+|_+$/g, '');
-          SL.io.download(SL.io.exportJob(fresh), `Strata-Lotpack_${safe(job.jobNumber || job.projectTitle || 'job')}_${SL.schema.todayIso()}.json`);
+          SL.io.download(SL.io.exportJob(fresh), `STRATA-Dia_${safe(job.jobNumber || job.projectTitle || 'job')}_${SL.schema.todayIso()}.json`);
         }),
         button('Delete job', delJob, 'danger')),
     );
@@ -650,7 +650,7 @@
     showLast();
     const exportAll = async () => {
       await SL.db.flush();
-      SL.io.download(await SL.io.exportAll(), `Strata-Lotpack_export_${today}.json`);
+      SL.io.download(await SL.io.exportAll(), `STRATA-Dia_export_${today}.json`);
       state.settings.lastExport = SL.mail.isoLocal();
       saveSettings();
       showLast();

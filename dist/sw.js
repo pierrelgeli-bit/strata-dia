@@ -1,10 +1,11 @@
-/* Strata Lotpack service worker: keeps the app in cache so it works 100 % offline after the first visit.
+/* STRATA Dia service worker: keeps the app in cache so it works 100 % offline after the first visit.
    VERSION is replaced at build time by a hash of index.html, so each new version is detected;
    the page then shows "Update available – Reload" and the new version takes over on reload.
    Only the app files are cached: lotpack data stays in IndexedDB on the device. */
 'use strict';
-const VERSION = '9d8c9f0f64f5';
-const CACHE = `strata-lotpack-${VERSION}`;
+const VERSION = '5d75f9b38ad8';
+const CACHE = `strata-dia-${VERSION}`;
+const OLD_PREFIXES = ['strata-dia-', 'strata-lotpack-']; // strata-lotpack-: caches from before the rename
 const FILES = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-512-maskable.png', './icons/apple-touch-icon.png'];
 
@@ -14,7 +15,7 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys()
-    .then((keys) => Promise.all(keys.filter((k) => k.startsWith('strata-lotpack-') && k !== CACHE).map((k) => caches.delete(k))))
+    .then((keys) => Promise.all(keys.filter((k) => OLD_PREFIXES.some((p) => k.startsWith(p)) && k !== CACHE).map((k) => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 

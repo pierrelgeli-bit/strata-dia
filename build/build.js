@@ -3,7 +3,7 @@
    Every <link rel="stylesheet" href="..."> and <script src="..."> in src/index.html
    is replaced by the file's content, inline.
    Outputs (dist/):
-   - strata-lotpack.html : the app in one file
+   - strata-dia.html : the app in one file
    - index.html, manifest.webmanifest, sw.js, icons/ : the same app published as an installable PWA (GitHub Pages) */
 'use strict';
 const fs = require('fs');
@@ -11,7 +11,7 @@ const path = require('path');
 
 const root = path.resolve(__dirname, '..');
 const src = path.join(root, 'src');
-const out = path.join(root, 'dist', 'strata-lotpack.html');
+const out = path.join(root, 'dist', 'strata-dia.html');
 
 const read = (rel) => {
   const file = path.join(src, rel);

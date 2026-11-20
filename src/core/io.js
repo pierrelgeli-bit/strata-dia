@@ -15,7 +15,7 @@
     const [jobs, contacts, settings] = await Promise.all([SL.db.getAllJobs(), SL.db.getMeta('contacts'), SL.db.getMeta('settings')]);
     return {
       schemaVersion: SCHEMA_VERSION,
-      app: 'strata-lotpack',
+      app: SL.schema.APP_ID,
       exportedAt: SL.mail.isoLocal(),
       contacts: contacts || [],
       settings: Object.assign(SL.schema.defaultSettings(), settings || {}),
@@ -24,14 +24,14 @@
   }
 
   function exportJob(job) {
-    return { schemaVersion: SCHEMA_VERSION, app: 'strata-lotpack', exportedAt: SL.mail.isoLocal(), jobs: [job] };
+    return { schemaVersion: SCHEMA_VERSION, app: SL.schema.APP_ID, exportedAt: SL.mail.isoLocal(), jobs: [job] };
   }
 
-  // Throws a readable error when the file is not a Strata Lotpack export
+  // Throws a readable error when the file is not a STRATA Dia export (files from before the rename are accepted)
   function parse(text) {
     let data;
     try { data = JSON.parse(text); } catch (e) { throw new Error('This file is not valid JSON.'); }
-    if (!data || data.app !== 'strata-lotpack' || !Array.isArray(data.jobs)) throw new Error('This file is not a Strata Lotpack export.');
+    if (!data || !SL.schema.APP_IDS.includes(data.app) || !Array.isArray(data.jobs)) throw new Error('This file is not a STRATA Dia export.');
     const v = Number(data.schemaVersion || 1);
     if (v > SCHEMA_VERSION) throw new Error(`This file comes from a newer version of the app (schema ${v}); update the app first.`);
     data.jobs = data.jobs.map((j) => {

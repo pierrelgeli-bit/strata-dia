@@ -9,7 +9,7 @@ const os = require('os');
 const { execFileSync } = require('child_process');
 const { chromium } = require('playwright');
 
-const url = 'file://' + path.resolve(__dirname, '..', 'dist', 'strata-lotpack.html');
+const url = 'file://' + path.resolve(__dirname, '..', 'dist', 'strata-dia.html');
 const outDir = process.env.OUT_DIR || path.join(__dirname, 'out');
 fs.mkdirSync(outDir, { recursive: true });
 let failures = 0;
@@ -122,9 +122,9 @@ const pdfText = async (page) => {
 
   // ---- 1. Export A, import into B: everything arrives, nothing lost ----
   const expA1 = await exportAll(A.page, 'step8-A1.json');
-  check(/^Strata-Lotpack_export_\d{4}-\d{2}-\d{2}\.json$/.test(expA1.name), `Export file name ${expA1.name}`);
+  check(/^STRATA-Dia_export_\d{4}-\d{2}-\d{2}\.json$/.test(expA1.name), `Export file name ${expA1.name}`);
   const dataA1 = JSON.parse(fs.readFileSync(expA1.path, 'utf8'));
-  check(dataA1.schemaVersion === 2 && dataA1.app === 'strata-lotpack' && dataA1.jobs.length === 1 && dataA1.contacts.length === 1 && dataA1.settings.alwaysCc === 'qa@colas.com.au', 'Export holds jobs, contacts and settings');
+  check(dataA1.schemaVersion === 2 && dataA1.app === 'strata-dia' && dataA1.jobs.length === 1 && dataA1.contacts.length === 1 && dataA1.settings.alwaysCc === 'qa@colas.com.au', 'Export holds jobs, contacts and settings');
   const rep1 = await importFile(B.page, expA1.path);
   check(rep1.includes('1 job(s) added, 1 shift(s) added, 0 replaced, 0 kept') && rep1.includes('1 contact(s) added'), 'Report before applying: 1 job + 1 shift + 1 contact added');
   check(await dump(A.page) === await dump(B.page), 'Round trip A → B: jobs identical byte for byte (signatures, sketch, 25 trucks, dip, survey, quantities)');
@@ -182,7 +182,7 @@ const pdfText = async (page) => {
   const [dlJob] = await Promise.all([B.page.waitForEvent('download'), B.page.getByRole('button', { name: 'Export job (JSON)' }).click()]);
   const jobFile = path.join(outDir, 'step8-job.json');
   await dlJob.saveAs(jobFile);
-  check(/^Strata-Lotpack_J-24017_\d{4}-\d{2}-\d{2}\.json$/.test(dlJob.suggestedFilename()), `Job export ${dlJob.suggestedFilename()}`);
+  check(/^STRATA-Dia_J-24017_\d{4}-\d{2}-\d{2}\.json$/.test(dlJob.suggestedFilename()), `Job export ${dlJob.suggestedFilename()}`);
   const C = await device('C');
   const rep5 = await importFile(C.page, jobFile);
   check(rep5.includes('1 job(s) added, 2 shift(s) added'), 'Job export imported on a third device');
@@ -190,8 +190,8 @@ const pdfText = async (page) => {
   // ---- 5. Invalid files refused ----
   const bad = (name, content) => { const p = path.join(outDir, name); fs.writeFileSync(p, content); return p; };
   check((await importFile(C.page, bad('bad1.json', '{not json'), false)).includes('Import refused: This file is not valid JSON.'), 'Broken JSON refused');
-  check((await importFile(C.page, bad('bad2.json', JSON.stringify({ app: 'other', jobs: [] })), false)).includes('not a Strata Lotpack export'), 'Other app refused');
-  check((await importFile(C.page, bad('bad3.json', JSON.stringify({ app: 'strata-lotpack', schemaVersion: 99, jobs: [] })), false)).includes('newer version of the app'), 'Newer schema refused');
+  check((await importFile(C.page, bad('bad2.json', JSON.stringify({ app: 'other', jobs: [] })), false)).includes('not a STRATA Dia export'), 'Other app refused');
+  check((await importFile(C.page, bad('bad3.json', JSON.stringify({ app: 'strata-dia', schemaVersion: 99, jobs: [] })), false)).includes('newer version of the app'), 'Newer schema refused');
 
   // Phone width on the report
   await A.page.setViewportSize({ width: 390, height: 844 });

@@ -1,6 +1,6 @@
-# Strata Lotpack — Architecture
+# STRATA Dia — Architecture
 
-**Strata Lotpack** est l'application terrain de la famille Strata. Strata Opus est l'outil global de gestion de projet. Lotpack remplace le pack papier COLAS NSW utilisé sur les chantiers d'enrobé. La V1 est une application web installable (PWA), publiée sur GitHub Pages et 100 % hors ligne après la première ouverture, qui permet de remplir les fiches sur tablette puis d'envoyer le lotpack par mail.
+**STRATA Dia** (anciennement Strata Lotpack) est l'application terrain de la famille Strata. Strata Opus est l'outil global de gestion de projet. STRATA Dia remplace le pack papier COLAS NSW (le lotpack) utilisé sur les chantiers d'enrobé. La V1 est une application web installable (PWA), publiée sur GitHub Pages et 100 % hors ligne après la première ouverture, qui permet de remplir les fiches sur tablette puis d'envoyer le lotpack par mail.
 
 > Ce document est la référence pour le développement dans Claude Code. Il est copié tel quel dans `docs/ARCHITECTURE.md` dans le dépôt GitHub. L'interface de l'application est en anglais ; la documentation et les échanges sont en français.
 
@@ -28,7 +28,7 @@ Hors périmètre V1 : back-end, synchronisation, comptes utilisateurs.
 
 ## 3. Principes d'architecture
 
-- **Un seul fichier livré** : `dist/strata-lotpack.html`, autonome (CSS, JS, gabarits inclus), publié tel quel (en index.html) sur GitHub Pages avec le manifest, le service worker et les icônes. Site statique : aucun serveur applicatif, les données restent sur l'appareil.
+- **Un seul fichier livré** : `dist/strata-dia.html`, autonome (CSS, JS, gabarits inclus), publié tel quel (en index.html) sur GitHub Pages avec le manifest, le service worker et les icônes. Site statique : aucun serveur applicatif, les données restent sur l'appareil.
 - **Sources modulaires** : le code est découpé en modules, assemblés par un script de build (même approche que Strata Opus).
 - **Local d'abord** : stockage IndexedDB, sauvegarde automatique à chaque modification.
 - **JSON comme format d'échange** : versionné, lisible, réimportable.
@@ -39,7 +39,7 @@ Hors périmètre V1 : back-end, synchronisation, comptes utilisateurs.
 ## 4. Structure du dépôt
 
 ```text
-strata-lotpack/
+strata-dia/
 ├── .github/workflows/
 │   └── pages.yml            ← publication GitHub Pages depuis main
 ├── docs/
@@ -51,7 +51,7 @@ strata-lotpack/
 │   ├── styles/
 │   │   └── app.css          ← interface tablette
 │   ├── core/
-│   │   ├── db.js            ← IndexedDB (CRUD, autosave)
+│   │   ├── db.js            ← IndexedDB (CRUD, autosave, reprise de l'ancienne base)
 │   │   ├── schema.js        ← modèle, version du schéma, migrations
 │   │   ├── io.js            ← export / import JSON, fusion
 │   │   ├── pdf.js           ← génération du PDF (pdf-lib)
@@ -78,10 +78,10 @@ strata-lotpack/
 │   └── build.js             ← assemble src/ en un seul HTML + fichiers PWA
 ├── tools/
 │   └── make-template.py     ← génère le gabarit depuis docs/forms (PyMuPDF)
-├── test/                    ← tests automatisés (Playwright), étapes 1 à 9
+├── test/                    ← tests automatisés (Playwright), étapes 1 à 10
 ├── dist/
-│   ├── index.html           ← app publiée (identique à strata-lotpack.html)
-│   ├── strata-lotpack.html  ← même app, utilisable en fichier local
+│   ├── index.html           ← app publiée (identique à strata-dia.html)
+│   ├── strata-dia.html      ← même app, utilisable en fichier local
 │   └── manifest.webmanifest, sw.js, icons/
 └── README.md
 ```
@@ -161,7 +161,7 @@ Unité de travail : le **Job** (projet global). Un job contient plusieurs **Shif
 ```json
 {
   "schemaVersion": 2,
-  "app": "strata-lotpack",
+  "app": "strata-dia",
   "exportedAt": "2026-11-04T09:00:00+08:00",
   "contacts": [{ "name": "", "email": "", "lastUsed": null }],
   "settings": { "theme": "system", "alwaysCc": "", "defaultCompletedBy": "" },
@@ -272,6 +272,7 @@ Regards,
 | 7 | PDF complet + Finish & send | Pack complet envoyé par mail depuis une tablette |
 | 8 | Export / import JSON | Aller-retour sans perte entre deux appareils |
 | 9 | PWA + GitHub Pages | App installée, utilisable hors ligne, « Update available – Reload » à chaque nouvelle version |
+| 10 | Renommage STRATA Dia | Données, réglages, contacts et exports de Strata Lotpack repris sans perte |
 
 ## 10. Conventions
 
@@ -282,23 +283,24 @@ Regards,
 
 ## 10 bis. Dépôt et branches
 
-- Dépôt GitHub : `https://github.com/pierrelgeli-bit/strata-lotpack.git`
+- Dépôt GitHub : `https://github.com/pierrelgeli-bit/strata-dia.git` (renommé, anciennement `strata-lotpack`)
 - Deux branches : `main` (version validée) et `test` (développement).
 - **Tout le développement se fait sur `test`.** Aucun merge ni push vers `main` sans instruction explicite de PL.
 - Ce document est versionné dans `docs/ARCHITECTURE.md`.
 
 ## 10 ter. Publication et installation
 
-- **Dépôt public** + **GitHub Pages** : le fichier `dist/strata-lotpack.html` est publié en `index.html` à l'adresse `https://pierrelgeli-bit.github.io/strata-lotpack/`. Le dépôt reste public (sur un compte gratuit, le repasser en privé désactive le site).
+- **Dépôt public** + **GitHub Pages** : le fichier `dist/strata-dia.html` est publié en `index.html` à l'adresse `https://pierrelgeli-bit.github.io/strata-dia/`. Le dépôt reste public (sur un compte gratuit, le repasser en privé désactive le site).
 - Publication depuis `main` uniquement, donc seulement après validation de PL. La branche `test` n'est jamais publiée. Le workflow .github/workflows/pages.yml reconstruit l'app et publie dist/ à chaque push sur main.
-- **Application installable (PWA)** : `manifest.webmanifest` (nom « Strata Lotpack », icônes, couleurs jour / nuit, affichage plein écran) et un **service worker** qui met l'app en cache pour un fonctionnement 100 % hors ligne après la première ouverture.
+- **Application installable (PWA)** : `manifest.webmanifest` (nom « STRATA Dia », icônes, couleurs jour / nuit, affichage plein écran) et un **service worker** qui met l'app en cache pour un fonctionnement 100 % hors ligne après la première ouverture.
 - Mise à jour : le service worker détecte une nouvelle version et propose « Update available – Reload ».
 - Installation sur téléphone / tablette : ouvrir l'adresse une fois avec réseau, puis iPhone/iPad « Partager → Sur l'écran d'accueil », Android « ⋮ → Installer l'application ».
 - Les données restent uniquement sur l'appareil (IndexedDB). Le site ne sert qu'à distribuer le code. Rappeler dans Settings de faire un export JSON régulier : effacer les données du navigateur supprime les lotpacks.
+- **Renommage Strata Lotpack → STRATA Dia** : dépôt `strata-dia` et nouvelle adresse du site ; l'ancienne adresse `/strata-lotpack/` n'est pas redirigée, l'app est à réinstaller depuis la nouvelle. Identifiants internes `strata-dia` (base IndexedDB, champ `app` des exports, cache). Au premier démarrage, les jobs, réglages et contacts de l'ancienne base `strata-lotpack` sont copiés une fois (l'ancienne base est conservée) ; les exports JSON marqués `strata-lotpack` restent importables ; l'ancien cache est supprimé. Le mot « Lotpack » reste celui du document COLAS (objet du mail, noms des PDF et JSON du shift).
 - La page HTTPS est nécessaire au partage natif avec pièces jointes (Web Share API) ; l'ouverture du fichier en local (`file://`) reste possible en secours, sans installation ni mise à jour automatique.
 
 ## 11. Questions ouvertes
 
 1. Aucune question ouverte. Hébergement tranché : GitHub Pages + PWA (voir 10 ter) ; le fichier local reste utilisable en secours.
 
-Décisions prises : limites saisies dans la fiche ; pas de photos en V1 ; une tablette par équipe ; signature sur écran acceptée ; pas de partage avec Strata Opus ; croquis à main levée multicolore ; PDF corrigé et paginé (« Page X of Y » cohérente) ; Site Diagram extensible par pages de dessin supplémentaires, chacune avec ses légendes ; Dip Record et Survey Record optionnels, ajoutés à la demande ; ordre du PDF : 6, 7, 10, 9, 12, 11 ; mail générique en anglais (modèle section 8) ; PDF généré par pdf-lib sur le PDF officiel en fond, et joint automatiquement ; développement étape par étape, avec validation de PL entre chaque étape ; hébergement sur GitHub Pages + PWA (dépôt public) ; légendes 3 et suivantes du Site Diagram sur une page de suite ; mail enrichi (job, shift, liste des fiches) et modifiable ; sélection d'une carte au clic, ouverture au double-clic ou par le bouton Open, Ctrl+C / Ctrl+V pour dupliquer ; duplication remise à zéro (historique d'envoi vidé, statut draft).
+Décisions prises : limites saisies dans la fiche ; pas de photos en V1 ; une tablette par équipe ; signature sur écran acceptée ; pas de partage avec Strata Opus ; croquis à main levée multicolore ; PDF corrigé et paginé (« Page X of Y » cohérente) ; Site Diagram extensible par pages de dessin supplémentaires, chacune avec ses légendes ; Dip Record et Survey Record optionnels, ajoutés à la demande ; ordre du PDF : 6, 7, 10, 9, 12, 11 ; mail générique en anglais (modèle section 8) ; PDF généré par pdf-lib sur le PDF officiel en fond, et joint automatiquement ; développement étape par étape, avec validation de PL entre chaque étape ; hébergement sur GitHub Pages + PWA (dépôt public) ; légendes 3 et suivantes du Site Diagram sur une page de suite ; mail enrichi (job, shift, liste des fiches) et modifiable ; sélection d'une carte au clic, ouverture au double-clic ou par le bouton Open, Ctrl+C / Ctrl+V pour dupliquer ; duplication remise à zéro (historique d'envoi vidé, statut draft) ; application renommée STRATA Dia (dépôt strata-dia), avec reprise des données et des exports de Strata Lotpack ; le document envoyé reste le « Lotpack ».

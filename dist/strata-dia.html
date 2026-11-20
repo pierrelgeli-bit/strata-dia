@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
-  <title>Strata Lotpack</title>
+  <title>STRATA Dia</title>
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#1a1f26" media="(prefers-color-scheme: dark)">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Lotpack">
+  <meta name="apple-mobile-web-app-title" content="STRATA Dia">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <style>/* styles/app.css */
-/* Strata Lotpack — tablet / phone UI */
+/* STRATA Dia — tablet / phone UI */
 :root {
   --bg: #f4f5f7;
   --surface: #ffffff;
@@ -342,7 +342,7 @@ textarea.mail-body { width: 100%; min-height: 280px; resize: vertical; }
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#/">Strata <span>Lotpack</span></a>
+    <a class="brand" href="#/">STRATA <span>Dia</span></a>
     <nav class="topnav">
       <a href="#/" data-nav="jobs">Jobs</a>
       <a href="#/settings" data-nav="settings">Settings</a>
@@ -400,6 +400,9 @@ SOFTWARE.
   'use strict';
 
   const SCHEMA_VERSION = 2;
+  // Value of `app` in exported JSON; files written before the rename to STRATA Dia say 'strata-lotpack'
+  const APP_ID = 'strata-dia';
+  const APP_IDS = [APP_ID, 'strata-lotpack'];
 
   // Drawing / legend colours (a legend's Key is its colour)
   const PALETTE = ['#d11f1f', '#1f4fd1', '#16893a', '#e07b00', '#7b2fbf', '#8a5a2b', '#0f8a8a', '#111111'];
@@ -521,7 +524,7 @@ SOFTWARE.
   }
 
   SL.schema = {
-    SCHEMA_VERSION, PALETTE, LAYER_KEYS, uuid, nowIso, todayIso, formatDate,
+    SCHEMA_VERSION, APP_ID, APP_IDS, PALETTE, LAYER_KEYS, uuid, nowIso, todayIso, formatDate,
     defaultSettings, newJob, newShift, migrateJob, shiftOrder,
   };
 })(window.SL = window.SL || {});
@@ -531,21 +534,72 @@ SOFTWARE.
 (function (SL) {
   'use strict';
 
-  const DB_NAME = 'strata-lotpack';
+  const DB_NAME = 'strata-dia';
+  const LEGACY_DB_NAME = 'strata-lotpack'; // name used before the app was renamed STRATA Dia
   const DB_VERSION = 1;
+  const STORES = ['jobs', 'meta'];
   let dbPromise = null;
+
+  // Opens the database written by the app before it was renamed, without creating it when absent
+  function openLegacy() {
+    return new Promise((resolve) => {
+      let req;
+      try { req = indexedDB.open(LEGACY_DB_NAME); } catch (e) { resolve(null); return; }
+      req.onupgradeneeded = () => req.transaction.abort(); // did not exist: leave nothing behind
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+      req.onblocked = () => resolve(null);
+    });
+  }
+
+  // First start under the new name: copy jobs, settings and contacts from the old database.
+  // The old database is left untouched (nothing is deleted).
+  async function copyLegacy(db) {
+    const old = await openLegacy();
+    if (!old) return 0;
+    let copied = 0;
+    try {
+      for (const name of STORES) {
+        if (!old.objectStoreNames.contains(name)) continue;
+        const rows = await new Promise((resolve, reject) => {
+          const r = old.transaction(name, 'readonly').objectStore(name).getAll();
+          r.onsuccess = () => resolve(r.result || []);
+          r.onerror = () => reject(r.error);
+        });
+        if (!rows.length) continue;
+        await new Promise((resolve, reject) => {
+          const t = db.transaction(name, 'readwrite');
+          rows.forEach((row) => t.objectStore(name).put(row));
+          t.oncomplete = resolve;
+          t.onerror = () => reject(t.error);
+        });
+        if (name === 'jobs') copied = rows.length;
+      }
+    } finally {
+      old.close();
+    }
+    return copied;
+  }
 
   function open() {
     if (dbPromise) return dbPromise;
     dbPromise = new Promise((resolve, reject) => {
       if (!window.indexedDB) { reject(new Error('IndexedDB is not available in this browser.')); return; }
+      let created = false;
       const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = () => {
+      req.onupgradeneeded = (e) => {
         const db = req.result;
-        if (!db.objectStoreNames.contains('jobs')) db.createObjectStore('jobs', { keyPath: 'id' });
-        if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' });
+        created = e.oldVersion === 0;
+        STORES.forEach((name) => { if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: name === 'jobs' ? 'id' : 'key' }); });
       };
-      req.onsuccess = () => resolve(req.result);
+      req.onsuccess = () => {
+        const db = req.result;
+        if (!created) { resolve(db); return; }
+        copyLegacy(db)
+          .then((n) => { if (n) console.info(`Copied ${n} job(s) from the previous app name.`); })
+          .catch((e) => console.warn('Previous data not copied:', e && e.message))
+          .then(() => resolve(db));
+      };
       req.onerror = () => reject(req.error);
       req.onblocked = () => reject(new Error('Database blocked by another open tab.'));
     });
@@ -1316,8 +1370,8 @@ SOFTWARE.
     paginate(pages, plan, fonts);
     const title = `Lotpack – ${[job.jobNumber, job.projectTitle].filter(Boolean).join(' ') || 'Job'} – ${SL.schema.formatDate(shift.date)}`;
     doc.setTitle(title);
-    doc.setCreator('Strata Lotpack');
-    doc.setProducer('Strata Lotpack');
+    doc.setCreator('STRATA Dia');
+    doc.setProducer('STRATA Dia');
     return doc.save();
   }
 
@@ -1388,7 +1442,7 @@ SOFTWARE.
     const { shifts, ...jobFields } = job;
     const data = {
       schemaVersion: SCHEMA_VERSION,
-      app: 'strata-lotpack',
+      app: SL.schema.APP_ID,
       exportedAt: isoLocal(),
       jobs: [{ ...jobFields, shifts: [shift] }],
     };
@@ -1478,7 +1532,7 @@ SOFTWARE.
     const [jobs, contacts, settings] = await Promise.all([SL.db.getAllJobs(), SL.db.getMeta('contacts'), SL.db.getMeta('settings')]);
     return {
       schemaVersion: SCHEMA_VERSION,
-      app: 'strata-lotpack',
+      app: SL.schema.APP_ID,
       exportedAt: SL.mail.isoLocal(),
       contacts: contacts || [],
       settings: Object.assign(SL.schema.defaultSettings(), settings || {}),
@@ -1487,14 +1541,14 @@ SOFTWARE.
   }
 
   function exportJob(job) {
-    return { schemaVersion: SCHEMA_VERSION, app: 'strata-lotpack', exportedAt: SL.mail.isoLocal(), jobs: [job] };
+    return { schemaVersion: SCHEMA_VERSION, app: SL.schema.APP_ID, exportedAt: SL.mail.isoLocal(), jobs: [job] };
   }
 
-  // Throws a readable error when the file is not a Strata Lotpack export
+  // Throws a readable error when the file is not a STRATA Dia export (files from before the rename are accepted)
   function parse(text) {
     let data;
     try { data = JSON.parse(text); } catch (e) { throw new Error('This file is not valid JSON.'); }
-    if (!data || data.app !== 'strata-lotpack' || !Array.isArray(data.jobs)) throw new Error('This file is not a Strata Lotpack export.');
+    if (!data || !SL.schema.APP_IDS.includes(data.app) || !Array.isArray(data.jobs)) throw new Error('This file is not a STRATA Dia export.');
     const v = Number(data.schemaVersion || 1);
     if (v > SCHEMA_VERSION) throw new Error(`This file comes from a newer version of the app (schema ${v}); update the app first.`);
     data.jobs = data.jobs.map((j) => {
@@ -3573,7 +3627,7 @@ SOFTWARE.
           await SL.db.flush();
           const fresh = await SL.db.getJob(job.id);
           const safe = (x) => String(x || '').replace(/[^A-Za-z0-9-]+/g, '_').replace(/^_+|_+$/g, '');
-          SL.io.download(SL.io.exportJob(fresh), `Strata-Lotpack_${safe(job.jobNumber || job.projectTitle || 'job')}_${SL.schema.todayIso()}.json`);
+          SL.io.download(SL.io.exportJob(fresh), `STRATA-Dia_${safe(job.jobNumber || job.projectTitle || 'job')}_${SL.schema.todayIso()}.json`);
         }),
         button('Delete job', delJob, 'danger')),
     );
@@ -3955,7 +4009,7 @@ SOFTWARE.
     showLast();
     const exportAll = async () => {
       await SL.db.flush();
-      SL.io.download(await SL.io.exportAll(), `Strata-Lotpack_export_${today}.json`);
+      SL.io.download(await SL.io.exportAll(), `STRATA-Dia_export_${today}.json`);
       state.settings.lastExport = SL.mail.isoLocal();
       saveSettings();
       showLast();

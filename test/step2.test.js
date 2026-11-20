@@ -8,7 +8,7 @@ const os = require('os');
 const { execFileSync } = require('child_process');
 const { chromium } = require('playwright');
 
-const url = 'file://' + path.resolve(__dirname, '..', 'dist', 'strata-lotpack.html');
+const url = 'file://' + path.resolve(__dirname, '..', 'dist', 'strata-dia.html');
 const outDir = process.env.OUT_DIR || path.join(__dirname, 'out');
 fs.mkdirSync(outDir, { recursive: true });
 let failures = 0;

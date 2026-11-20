@@ -1,6 +1,6 @@
 {
-  "name": "Strata Lotpack",
-  "short_name": "Lotpack",
+  "name": "STRATA Dia",
+  "short_name": "STRATA Dia",
   "description": "COLAS NSW asphalt lotpack field sheets, filled on site and emailed as PDF + JSON.",
   "start_url": "./",
   "scope": "./",
