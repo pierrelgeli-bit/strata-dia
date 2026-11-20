@@ -3,7 +3,7 @@
    the page then shows "Update available – Reload" and the new version takes over on reload.
    Only the app files are cached: lotpack data stays in IndexedDB on the device. */
 'use strict';
-const VERSION = '5d75f9b38ad8';
+const VERSION = '94e64bd5d771';
 const CACHE = `strata-dia-${VERSION}`;
 const OLD_PREFIXES = ['strata-dia-', 'strata-lotpack-']; // strata-lotpack-: caches from before the rename
 const FILES = ['./', './index.html', './manifest.webmanifest',

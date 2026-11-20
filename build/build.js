@@ -54,8 +54,11 @@ fs.mkdirSync(path.join(dist, 'icons'), { recursive: true });
 fs.writeFileSync(out, html);
 fs.writeFileSync(path.join(dist, 'index.html'), html);
 
-// PWA files: manifest, icons, service worker with a version = hash of the app
-const version = require('crypto').createHash('sha256').update(html).digest('hex').slice(0, 12);
+// PWA files: manifest, icons, service worker with a version = hash of every published file,
+// so a change to the icons or the manifest alone also shows "Update available" on the devices
+const hash = require('crypto').createHash('sha256').update(html).update(read('pwa/manifest.webmanifest')).update(read('pwa/sw.js'));
+for (const f of fs.readdirSync(path.join(src, 'pwa', 'icons')).sort()) hash.update(f).update(fs.readFileSync(path.join(src, 'pwa', 'icons', f)));
+const version = hash.digest('hex').slice(0, 12);
 fs.copyFileSync(path.join(src, 'pwa', 'manifest.webmanifest'), path.join(dist, 'manifest.webmanifest'));
 for (const f of fs.readdirSync(path.join(src, 'pwa', 'icons'))) fs.copyFileSync(path.join(src, 'pwa', 'icons', f), path.join(dist, 'icons', f));
 fs.writeFileSync(path.join(dist, 'sw.js'), read('pwa/sw.js').replace("'__BUILD_VERSION__'", `'${version}'`));
