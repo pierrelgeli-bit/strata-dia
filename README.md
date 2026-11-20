@@ -2,7 +2,8 @@
 
 Application terrain de la famille Strata (anciennement Strata Lotpack, dépôt renommé `strata-lotpack` → `strata-dia`) : remplissage sur tablette du lotpack d'enrobé COLAS NSW (fiches MSF28), puis envoi par mail (PDF + JSON).
 
-- Référence : [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- Référence (cadrage fonctionnel et technique) : [`docs/cadrage.md`](docs/cadrage.md)
+- Plan de travail et suivi : [`docs/plan.md`](docs/plan.md)
 - Fiches officielles : [`docs/forms/`](docs/forms/)
 - Application : **https://pierrelgeli-bit.github.io/strata-dia/** (GitHub Pages, publiée depuis `main`), installable et 100 % hors ligne après la première ouverture.
 - Livrable : `dist/index.html` (identique à `dist/strata-dia.html`), un seul fichier autonome, plus `manifest.webmanifest`, `sw.js` et `icons/`.
