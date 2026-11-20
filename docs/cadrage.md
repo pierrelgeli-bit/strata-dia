@@ -36,7 +36,7 @@ La V1 est une application web installable (PWA), publiée sur GitHub Pages et 10
 
 **Hors périmètre V1** : back-end, synchronisation, comptes utilisateurs, photos, partage avec Strata Opus.
 
-**Contexte d'usage** : une seule tablette (ou téléphone) par équipe, iPad ou Android, navigateur récent (Safari, Chrome).
+**Contexte d'usage** : une seule tablette (ou téléphone) par équipe, utilisée par une seule personne.
 
 ## 2. Règles de travail
 
@@ -47,11 +47,12 @@ La V1 est une application web installable (PWA), publiée sur GitHub Pages et 10
 - **Tout le développement se fait sur `test`.** Aucun merge ni push vers `main` sans instruction explicite de PL. Pas de push du tout sans demande de PL.
 - La branche `test` n'est jamais publiée. Le workflow `.github/workflows/pages.yml` reconstruit l'app et publie `dist/` à chaque push sur `main`.
 
-**Rôles**
+**Rôles et flux de travail**
 
-- **Opus** (modèle de cadrage) : met à jour `docs/cadrage.md` et `docs/plan.md`. Il n'écrit pas de code.
-- **Sonnet** (modèle de développement) : lit `cadrage.md` puis `plan.md`, code, teste, coche les tâches faites dans `plan.md`.
-- **PL** : valide chaque étape et tranche ce que les modèles ne peuvent pas décider seuls.
+- **PL** donne les demandes, répond aux questions, valide chaque lot et décide seul des push et de la publication.
+- **Opus** (modèle de cadrage) transforme les demandes de PL en lots de tâches dans `docs/plan.md` et tient `docs/cadrage.md` à jour quand une décision change l'app. Il n'écrit pas de code.
+- **Sonnet** (modèle de développement) lit `cadrage.md` puis `plan.md`, code le lot en cours, teste, et coche les tâches faites dans `plan.md`. Il ne modifie pas `cadrage.md`.
+- Les deux modèles posent un maximum de questions à PL tant qu'un point n'est pas clair ; aucune supposition silencieuse sur un point bloquant.
 
 **Conventions**
 
@@ -59,7 +60,7 @@ La V1 est une application web installable (PWA), publiée sur GitHub Pages et 10
 - Dates en ISO 8601, heures au fuseau de l'appareil, unités dans les noms de champs si besoin (`windKmh`).
 - Toute évolution du modèle incrémente `schemaVersion` avec une fonction de migration.
 - Aucune donnée n'est envoyée sur le réseau sans action de l'utilisateur.
-- Tests Playwright obligatoires pour chaque étape (dossier `test/`), exécutés avant de déclarer une tâche terminée.
+- Tests Playwright obligatoires (dossier `test/`, un fichier par étape) : tout comportement nouveau a son test, et toute la suite passe avant de déclarer un lot terminé. Commande complète dans le `README.md` (section Tests).
 
 ## 3. Architecture technique
 
@@ -70,6 +71,7 @@ La V1 est une application web installable (PWA), publiée sur GitHub Pages et 10
 - **Local d'abord** : stockage IndexedDB, sauvegarde automatique à chaque modification.
 - **JSON comme format d'échange** : versionné, lisible, réimportable.
 - **Rendu fidèle** : le PDF officiel sert de fond ; pdf-lib écrit les valeurs, les cases cochées et les signatures par-dessus, le rendu est donc identique au papier.
+- **Indépendant de l'appareil** : iPad ou Android, navigateur récent (Safari, Chrome).
 - **Vanilla JS** : pas de framework, pour garder un fichier léger et durable. Seule bibliothèque : pdf-lib (licence MIT), intégrée au fichier, sans réseau.
 
 **Structure du dépôt**
@@ -213,7 +215,7 @@ Unité de travail : le **Job** (projet global). Un job contient plusieurs **Shif
 
 ### Site Diagram (MSF28-7)
 
-- **Pas d'en-tête ni de Type of work** dans la fiche : ces infos sont déjà dans Shift details et l'Approval to Proceed. Pas de champ Completed by en bas (repris de Shift details).
+- **Pas d'en-tête ni de Type of work** dans la fiche : ces infos sont déjà dans Shift details et l'Approval to Proceed. Pas de champ Completed by à saisir en bas : sur le PDF, le Completed By de chaque page est repris de Shift details.
 - **Plein écran** pour dessiner.
 - **Zoom** : pincer à deux doigts pour zoomer et se déplacer ; un doigt ou le stylet dessine à l'endroit zoomé. Boutons + / − / « Fit » en complément. Le trait reste fin quel que soit le zoom, pour pouvoir ajouter de petits détails.
 - **Légendes** : seule « Legend 1 » est affichée au départ ; un bouton **+** ajoute une légende (Legend 2, 3…), chacune avec une nouvelle couleur. Champs d'une légende :
@@ -258,7 +260,7 @@ Unité de travail : le **Job** (projet global). Un job contient plusieurs **Shif
 
 - La barre d'onglets des fiches défile horizontalement ; l'onglet sélectionné reste centré et visible au changement de fiche, la barre ne revient pas au début.
 
-### Settings
+### Onglet Settings
 
 - Carnet d'adresses (ajouter, modifier, supprimer des contacts nom + email), derniers destinataires mémorisés.
 - **Adresse toujours en copie**, thème jour / nuit, nom par défaut du rédacteur.
